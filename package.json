@@ -1,0 +1,24 @@
+{
+  "name": "@openease/rosprolog-console",
+  "version": "1.0.0",
+  "description": "A console GUI that interacts with a rosprolog node.",
+  "author": "Daniel Beßler",
+  "license": "LGPL-3.0-or-later",
+  "main": "PrologConsole.js",
+  "scripts": {
+    "test": "echo \"Warning: no test specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ease-crc/rosprolog-js-console"
+  },
+  "bugs": {
+    "url": "https://github.com/ease-crc/rosprolog-js-console/issues"
+  },
+  "homepage": "https://github.com/ease-crc/rosprolog-js-console#readme",
+  "dependencies": {
+    "@openease/ros-client": "1.0.0",
+    "brace": "0.11.1"
+  }
+}
+

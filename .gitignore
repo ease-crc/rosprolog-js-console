@@ -1,0 +1,8 @@
+# all "hidden" files
+.*
+
+# node and javascript stuff
+node_modules/
+npm-debug.log
+
+coverage
