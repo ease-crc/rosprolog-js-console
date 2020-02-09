@@ -7,7 +7,7 @@ require('brace/theme/solarized_light');
 require('brace/ext/language_tools');
 var aceLangTools = ace.acequire("ace/ext/language_tools");
 
-var ROSPrologClient = require('@openease/ros-client').ROSPrologClient;
+var ROSPrologClient = require('@openease/ros-clients').ROSPrologClient;
 
 /**
  * A Prolog console with history pane.
