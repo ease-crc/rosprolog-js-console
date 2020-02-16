@@ -16,11 +16,11 @@ module.exports = function(client, options) {
     var that = this;
     var prolog;
     
-    var useOverlay = options.use_console_overlay;
-    
-    var nextButtonDiv = options.next_button_div || 'btn_query_next';
-    var historyDiv    = options.history_div || 'history';
-    var queryDiv      = options.query_div || 'user_query';
+    this.on_query        = options.on_query || function(qid,q){};
+    this.on_query_answer = options.on_query_answer || function(qid,answer){};
+    this.on_query_finish = options.on_query_finish || function(qid){};
+        
+    var queryDiv = options.query_div || 'user_query';
     
     // Names of prolog predicates and modules for auto completion
     var prologNames;
@@ -69,40 +69,13 @@ module.exports = function(client, options) {
         
         this.initAutoCompletion();
         
-        // Create console iosOverlay
-        var console = document.getElementById('console');
-        if(console) {
-            var consoleOverlay = document.createElement("div");
-            consoleOverlay.setAttribute("id", "console-overlay");
-            consoleOverlay.className = "ios-overlay ios-overlay-hide div-overlay";
-            consoleOverlay.innerHTML += '<span class="title">Processing Query</span';
-            consoleOverlay.style.display = 'none';
-            console.appendChild(consoleOverlay);
-            var spinner = createSpinner();
-            consoleOverlay.appendChild(spinner.el);
-        }
-        
-        var history = ace.edit(historyDiv);
-        history.setTheme("ace/theme/solarized_light");
-        history.getSession().setMode("ace/mode/prolog");
-        history.getSession().setUseWrapMode(true);
-        history.setOptions({
-            readOnly: true,
-            showGutter: false,
-            printMarginColumn: false,
-            highlightActiveLine: false,
-            highlightGutterLine: false,
-            wrap: false
-        });
-        
-        setInactive(document.getElementById(nextButtonDiv));
-        
         setInterval(that.updateNamespaces, 10000);
         that.updateNamespaces();
     };
     
     this.updateNamespaces = function(objectName) {
-        var pl = that.newProlog();
+        if(!client.ros) return;
+        var pl = new ROSPrologClient(client.ros, {});
         if(!pl) return;
         pl.jsonQuery("findall([_X,_Y], rdf_current_ns(_X,_Y), NS).",
             function(result) {
@@ -119,12 +92,13 @@ module.exports = function(client, options) {
     };
     
     this.queryPredicateNames = function() {
+      if(!client.ros) return;
       if( ! prologNames ) {
-        prolog = this.newProlog();
-        if(!prolog) return;
+        var pl = new ROSPrologClient(client.ros, {});
+        if(!pl) return;
         prologNames = [];
         // Query for predicates/modules and collect all results
-        prolog.jsonQuery("findall(X, current_predicate(X/_);current_module(X), L)", function(x) {
+        pl.jsonQuery("findall(X, current_predicate(X/_);current_module(X), L)", function(x) {
           if (x.value) {
             // Parse each value
             var lines = x.value.split("\n");
@@ -158,58 +132,33 @@ module.exports = function(client, options) {
             }
         });
     };
-    
-    this.showConsoleOverlay = function () {
-      var consoleOverlay = document.getElementById('console-overlay');
-      if(consoleOverlay) {
-          consoleOverlay.style.display = 'block';
-          consoleOverlay.className = consoleOverlay.className.replace("hide","show");
-          consoleOverlay.style.pointerEvents = "auto";
-      }
-    };
-    
-    this.hideConsoleOverlay = function () {
-      var consoleOverlay = document.getElementById('console-overlay');
-      if(consoleOverlay) {
-          //consoleOverlay.style.display = 'none';
-          consoleOverlay.className = consoleOverlay.className.replace("show","hide");
-          consoleOverlay.style.pointerEvents = "none";
-      }
-    };
 
     this.newProlog = function() {
       if(!client.ros) return;
       if (prolog && prolog.finished == false) {
-        ace.edit(historyDiv).setValue(ace.edit(historyDiv).getValue() + "stopped.\n", -1);
-        ace.edit(historyDiv).navigateFileEnd();
-        prolog.finishClient();
+        that.finishProlog(prolog);
         prolog = undefined;
       }
       return new ROSPrologClient(client.ros, {});
     }
+
+    this.finishProlog = function(pl) {
+        pl.finishClient();
+        that.on_query_finish(pl.qid);
+    };
     
     this.query = function () {
       var query = ace.edit(queryDiv);
-      var history = ace.edit(historyDiv);
       var q = query.getValue().trim();
     
       if (q.substr(q.length - 1) == ".") {
         q = q.substr(0, q.length - 1);
         prolog = this.newProlog();
-        if(useOverlay) that.showConsoleOverlay();
+        that.on_query(prolog.qid,q);
         
-        history.setValue(history.getValue() + "\n\n?- " + q +  ".\n", -1);
-        history.navigateFileEnd();
-        setActive(document.getElementById(nextButtonDiv));
-        
-//         prolog.jsonQuery(q+", ignore(marker_publish)", function(result) {
         prolog.jsonQuery(q, function(result) {
-            if(useOverlay) that.hideConsoleOverlay();
-            history.setValue(history.getValue() + prolog.format(result,that.rdf_namespaces), -1);
-            history.navigateFileEnd();
-            if( ! result.value ) setInactive(document.getElementById(nextButtonDiv));
+            that.on_query_answer(prolog.qid,result);
         }, mode=1); // incremental mode
-        
         query.setValue("");
         
         that.addHistoryItem(q);
@@ -217,48 +166,19 @@ module.exports = function(client, options) {
       }
       else {
         if (prolog != null && prolog.finished == false) {
-          if(useOverlay) that.hideConsoleOverlay();
-          history.setValue(history.getValue() + "stopped.\n\n", -1);
-          history.navigateFileEnd();
-          prolog.finishClient();
+          that.finishProlog(prolog);
           prolog = undefined;
-        }
-        else {
-          alert("Invalid prolog query '" + q + "'. Prolog queries always end with a dot.");
         }
       }
     };
 
     this.nextSolution = function () {
-      var history = ace.edit(historyDiv);
-      if(useOverlay) that.showConsoleOverlay();
-      prolog.nextQuery(function(result) {
-          if(useOverlay) that.hideConsoleOverlay();
-          history.setValue(history.getValue() + prolog.format(result,that.rdf_namespaces), -1);
-          history.navigateFileEnd();
-          if( ! result.value ) setInactive(document.getElementById(nextButtonDiv));
-      });
-      ace.edit(queryDiv).focus();
-    };
-    
-    // TODO(daniel): better use CSS class / disabled selector
-    function setActive(div) {
-      div.style.pointerEvents = "auto";
-      div.style.backgroundColor = "#dadada";
-      div.style.color = "#606060";
-      div.style.opacity = "1.0";
-    };
-    function setInactive(div) {
-      div.style.pointerEvents = "none";
-      div.style.backgroundColor = "#cfcfcf";
-      div.style.color = "#adadad";
-      div.style.opacity = "0.2";
-    };
-
-    // append the selected query to the user_query form
-    this.addSelectedToQueryform = function (selectid, focus) {
-      var select = document.getElementById(selectid);
-      this.setQueryValue(select.options[select.selectedIndex].value, focus);
+      if (prolog != null && prolog.finished == false) {
+        prolog.nextQuery(function(result) {
+            that.on_query_answer(prolog.qid,result);
+        });
+        ace.edit(queryDiv).focus();
+      }
     };
 
     // set the value of the query editor and move the cursor to the end
@@ -266,8 +186,6 @@ module.exports = function(client, options) {
       var user_query = ace.edit(queryDiv);
       user_query.setValue(val, -1);
       if(focus) user_query.focus();
-      // disabled because it behaviour is not nice when wrapping disabled
-      //user_query.navigateFileEnd();
     };
     
     ///////////////////////////////
@@ -276,7 +194,7 @@ module.exports = function(client, options) {
 
     this.addHistoryItem = function (query) {
 //         $.ajax({
-//             url: "/knowrob/add_history_item",
+//             url: "/QA/history/add",
 //             type: "POST",
 //             contentType: "application/json",
 //             data: JSON.stringify({query: query}),  
@@ -285,8 +203,9 @@ module.exports = function(client, options) {
     };
 
     this.setHistoryItem = function (index) {
+        // TODO: maybe better query all items once?
 //         $.ajax({
-//             url: "/knowrob/get_history_item",
+//             url: "/QA/history/get",
 //             type: "POST",
 //             contentType: "application/json",
 //             data: JSON.stringify({index: index}),  
@@ -307,12 +226,12 @@ module.exports = function(client, options) {
     };
     
     this.zoomIn = function() {
-        $('#history').css('font-size', parseInt($('#history').css("font-size")) + 2);
+//         $('#history').css('font-size', parseInt($('#history').css("font-size")) + 2);
         $('#user_query').css('font-size', parseInt($('#user_query').css("font-size")) + 2);
     };
     
     this.zoomOut = function() {
-        $('#history').css('font-size', parseInt($('#history').css("font-size")) - 2);
+//         $('#history').css('font-size', parseInt($('#history').css("font-size")) - 2);
         $('#user_query').css('font-size', parseInt($('#user_query').css("font-size")) - 2);
     };
 };
