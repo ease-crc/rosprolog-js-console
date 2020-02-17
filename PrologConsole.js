@@ -147,21 +147,23 @@ module.exports = function(client, options) {
         that.on_query_finish(pl.qid);
     };
     
-    this.query = function () {
+    this.query = function (query_string) {
       var query = ace.edit(queryDiv);
-      var q = query.getValue().trim();
+      if(!query_string) {
+        query_string = query.getValue().trim();
+      }
     
-      if (q.substr(q.length - 1) == ".") {
-        q = q.substr(0, q.length - 1);
+      if (query_string.substr(query_string.length - 1) == ".") {
+        query_string = query_string.substr(0, query_string.length - 1);
         prolog = this.newProlog();
-        that.on_query(prolog.qid,q);
+        that.on_query(prolog.qid,query_string);
         
-        prolog.jsonQuery(q, function(result) {
+        prolog.jsonQuery(query_string, function(result) {
             that.on_query_answer(prolog.qid,result);
         }, mode=1); // incremental mode
         query.setValue("");
         
-        that.addHistoryItem(q);
+        that.addHistoryItem(query_string);
         historyIndex = -1;
       }
       else {
