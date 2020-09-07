@@ -1,6 +1,6 @@
 {
   "name": "@openease/rosprolog-console",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A console GUI that interacts with a rosprolog node.",
   "author": "Daniel Beßler",
   "license": "LGPL-3.0-or-later",
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/ease-crc/rosprolog-js-console#readme",
   "dependencies": {
-    "@openease/ros-clients": "1.0.0",
+    "@openease/ros-clients": "1.0.1",
     "brace": "0.11.1"
   }
 }
