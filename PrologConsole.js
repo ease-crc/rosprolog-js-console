@@ -66,6 +66,8 @@ module.exports = function(client, options) {
             exec: function(editor) { that.previousHistoryItem(); }
         });
         userQuery.resize(true);
+
+        this.consultInitialPkgs();
         
         this.initAutoCompletion();
         
@@ -116,6 +118,16 @@ module.exports = function(client, options) {
           }
         }, mode=0);
       }
+      return prologNames;
+    };
+
+    this.consultInitialPkgs = function() {
+      if(!client.ros) return;
+      var pl = new ROSPrologClient(client.ros, {});
+      if(!pl) return;
+      prologNames = [];
+      // Query for predicates/modules and collect all results
+      pl.jsonQuery("register_ros_package('knowrob_openease')", function(x) {}, mode=0);
       return prologNames;
     };
     
