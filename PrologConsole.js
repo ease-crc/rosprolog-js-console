@@ -166,11 +166,12 @@ module.exports = function(client, options) {
       }
     
       if (query_string.substr(query_string.length - 1) == ".") {
+        openease_query_string = "openease_query(" + query_string.substr(0, query_string.length - 1) + ", [])";
         query_string = query_string.substr(0, query_string.length - 1);
         prolog = this.newProlog();
         that.on_query(prolog.qid,query_string);
         
-        prolog.jsonQuery(query_string, function(result) {
+        prolog.jsonQuery(openease_query_string, function(result) {
             that.on_query_answer(prolog.qid,result);
         }, mode=1); // incremental mode
         query.setValue("");
