@@ -15,6 +15,8 @@ var ROSPrologClient = require('@openease/ros-clients').ROSPrologClient;
 module.exports = function(client, options) {
     var that = this;
     var prolog;
+
+    var consultedInitialPkgs=false;
     
     this.on_query        = options.on_query || function(qid,q){};
     this.on_query_answer = options.on_query_answer || function(qid,answer){};
@@ -66,8 +68,6 @@ module.exports = function(client, options) {
             exec: function(editor) { that.previousHistoryItem(); }
         });
         userQuery.resize(true);
-
-        this.consultInitialPkgs();
         
         this.initAutoCompletion();
         
@@ -128,7 +128,7 @@ module.exports = function(client, options) {
       prologNames = [];
       // Query for predicates/modules and collect all results
       pl.jsonQuery("register_ros_package('knowrob_openease')", function(x) {}, mode=0);
-      return prologNames;
+      consultedInitialPkgs = true;
     };
     
     this.initAutoCompletion = function() {
@@ -166,6 +166,9 @@ module.exports = function(client, options) {
       }
     
       if (query_string.substr(query_string.length - 1) == ".") {
+      	if (!consultedInitialPkgs) {
+      		this.consultInitialPkgs();
+      	}
         openease_query_string = "openease_query(" + query_string.substr(0, query_string.length - 1) + ", [])";
         query_string = query_string.substr(0, query_string.length - 1);
         prolog = this.newProlog();
