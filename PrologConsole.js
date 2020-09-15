@@ -70,6 +70,8 @@ module.exports = function(client, options) {
         userQuery.resize(true);
         
         this.initAutoCompletion();
+
+        this.consultInitialPkgs();
         
         setInterval(that.updateNamespaces, 10000);
         that.updateNamespaces();
@@ -127,8 +129,11 @@ module.exports = function(client, options) {
       if(!pl) return;
       prologNames = [];
       // Query for predicates/modules and collect all results
-      pl.jsonQuery("register_ros_package('knowrob_openease')", function(x) {}, mode=0);
-      consultedInitialPkgs = true;
+      pl.jsonQuery("register_ros_package('knowrob_openease')", function(x) {
+        if (x.value) {
+          consultedInitialPkgs = true;
+        }
+      }, mode=0);
     };
     
     this.initAutoCompletion = function() {
