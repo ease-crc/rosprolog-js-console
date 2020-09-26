@@ -23,6 +23,8 @@ module.exports = function(client, options) {
     this.on_query_finish = options.on_query_finish || function(qid){};
         
     var queryDiv = options.query_div || 'user_query';
+
+    var neem_id = options.neem_id || '5f22b1f512db5aed7cd1961a';
     
     // Names of prolog predicates and modules for auto completion
     var prologNames;
@@ -129,7 +131,8 @@ module.exports = function(client, options) {
       if(!pl) return;
       prologNames = [];
       // Query for predicates/modules and collect all results
-      pl.jsonQuery("register_ros_package('knowrob_openease')", function(x) {
+      pl.jsonQuery("register_ros_package('knowrob_openease'), set_setting(mng_client:collection_prefix, '"
+          + neem_id + "')", function(x) {
         if (x.value) {
           consultedInitialPkgs = true;
         }
