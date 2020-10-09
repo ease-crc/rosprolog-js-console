@@ -15,16 +15,12 @@ var ROSPrologClient = require('@openease/ros-clients').ROSPrologClient;
 module.exports = function(client, options) {
     var that = this;
     var prolog;
-
-    var consultedInitialPkgs=false;
     
     this.on_query        = options.on_query || function(qid,q){};
     this.on_query_answer = options.on_query_answer || function(qid,answer){};
     this.on_query_finish = options.on_query_finish || function(qid){};
         
     var queryDiv = options.query_div || 'user_query';
-
-    var neem_id = options.neem_id || '5f22b1f512db5aed7cd1961a';
     
     // Names of prolog predicates and modules for auto completion
     var prologNames;
@@ -124,20 +120,6 @@ module.exports = function(client, options) {
       }
       return prologNames;
     };
-
-    this.consultInitialPkgs = function() {
-      if(!client.ros) return;
-      var pl = new ROSPrologClient(client.ros, {});
-      if(!pl) return;
-      prologNames = [];
-      // Query for predicates/modules and collect all results
-      pl.jsonQuery("register_ros_package('knowrob_openease'), set_setting(mng_client:collection_prefix, '"
-          + neem_id + "')", function(x) {
-        if (x.value) {
-          consultedInitialPkgs = true;
-        }
-      }, mode=0);
-    };
     
     this.initAutoCompletion = function() {
         // Add completer for prolog code
@@ -174,9 +156,6 @@ module.exports = function(client, options) {
       }
     
       if (query_string.substr(query_string.length - 1) == ".") {
-      	if (!consultedInitialPkgs) {
-      		this.consultInitialPkgs();
-      	}
         openease_query_string = "openease_query(" + query_string.substr(0, query_string.length - 1) + ", [])";
         query_string = query_string.substr(0, query_string.length - 1);
         prolog = this.newProlog();
