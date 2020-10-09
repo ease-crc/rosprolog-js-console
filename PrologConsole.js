@@ -68,8 +68,6 @@ module.exports = function(client, options) {
         userQuery.resize(true);
         
         this.initAutoCompletion();
-
-        this.consultInitialPkgs();
         
         setInterval(that.updateNamespaces, 10000);
         that.updateNamespaces();
