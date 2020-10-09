@@ -196,36 +196,36 @@ module.exports = function(client, options) {
     ///////////////////////////////
 
     this.addHistoryItem = function (query) {
-//         $.ajax({
-//             url: "/QA/history/add",
-//             type: "POST",
-//             contentType: "application/json",
-//             data: JSON.stringify({query: query}),  
-//             dataType: "json"
-//         }).done( function (request) {});
+        var pl = new ROSPrologClient(client.ros, {});
+        if(!pl) return;
+        pl.jsonQuery("history_add('"+query+"').",
+            function(result) {}
+        );
     };
 
     this.setHistoryItem = function (index) {
-        // TODO: maybe better query all items once?
-//         $.ajax({
-//             url: "/QA/history/get",
-//             type: "POST",
-//             contentType: "application/json",
-//             data: JSON.stringify({index: index}),  
-//             dataType: "json",
-//             success: function (data) {
-//                  ace.edit(queryDiv).setValue(data.item);
-//                  historyIndex = data.index;
-//             }
-//         }).done( function (request) {});
+        var pl = new ROSPrologClient(client.ros, {});
+        if(!pl) return;
+        pl.jsonQuery("history_get("+index+",Q).",
+            function(result) {
+                if(result.solution) {
+                    var user_query = ace.edit(queryDiv);
+                    user_query.setValue(result.solution.Q + ".");
+                    user_query.focus();
+                    historyIndex = index;
+                }
+            }
+        );
     };
 
     this.nextHistoryItem = function () {
-//         this.setHistoryItem(historyIndex+1);
+        this.setHistoryItem(historyIndex+1);
     };
     
     this.previousHistoryItem = function () {
-//         this.setHistoryItem(historyIndex-1);
+        if(historyIndex>0) {
+            this.setHistoryItem(historyIndex-1);
+        }
     };
     
     this.zoomIn = function() {
