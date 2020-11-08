@@ -43,7 +43,8 @@ module.exports = function(client, options) {
             highlightGutterLine: false,
             enableBasicAutocompletion: true,
             enableLiveAutocompletion: true,
-            wrap: false
+            wrap: false,
+            maxLines: Infinity
         });
         userQuery.commands.addCommand({
             name: 'send_query', readOnly: false,
@@ -154,12 +155,11 @@ module.exports = function(client, options) {
       }
     
       if (query_string.substr(query_string.length - 1) == ".") {
-        openease_query_string = "openease_query((" + query_string.substr(0, query_string.length - 1) + "), [])";
         query_string = query_string.substr(0, query_string.length - 1);
         prolog = that.newProlog();
         that.on_query(prolog.qid,query_string);
         
-        prolog.jsonQuery(openease_query_string, function(result) {
+        prolog.jsonQuery(query_string, function(result) {
             that.on_query_answer(prolog.qid,result);
         }, mode=1); // incremental mode
         query.setValue("");
@@ -189,6 +189,15 @@ module.exports = function(client, options) {
       var user_query = ace.edit(queryDiv);
       user_query.setValue(val, -1);
       if(focus) user_query.focus();
+    };
+
+    this.format = function (val) {
+        if (prolog != null) {
+            return prolog.format({"value": val}, that.rdf_namespaces);
+        }
+        else {
+            return val;
+        }
     };
     
     ///////////////////////////////
@@ -226,15 +235,5 @@ module.exports = function(client, options) {
         if(historyIndex>0) {
             this.setHistoryItem(historyIndex-1);
         }
-    };
-    
-    this.zoomIn = function() {
-//         $('#history').css('font-size', parseInt($('#history').css("font-size")) + 2);
-        $('#user_query').css('font-size', parseInt($('#user_query').css("font-size")) + 2);
-    };
-    
-    this.zoomOut = function() {
-//         $('#history').css('font-size', parseInt($('#history').css("font-size")) - 2);
-        $('#user_query').css('font-size', parseInt($('#user_query').css("font-size")) - 2);
     };
 };
