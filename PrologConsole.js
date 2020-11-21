@@ -32,11 +32,11 @@ module.exports = function(client, options) {
     this.rdf_namespaces = {};
 
     this.init = function () {
-        var userQuery = ace.edit(queryDiv);
-        userQuery.setTheme("ace/theme/solarized_light");
-        userQuery.getSession().setMode("ace/mode/prolog");
-        userQuery.getSession().setUseWrapMode(true);
-        userQuery.setOptions({
+        var queryInput = ace.edit(queryDiv);
+        //queryInput.setTheme("ace/theme/solarized_light");
+        queryInput.getSession().setMode("ace/mode/prolog");
+        queryInput.getSession().setUseWrapMode(true);
+        queryInput.setOptions({
             showGutter: false,
             printMarginColumn: false,
             highlightActiveLine: false,
@@ -46,27 +46,29 @@ module.exports = function(client, options) {
             wrap: false,
             maxLines: Infinity
         });
-        userQuery.commands.addCommand({
+        queryInput.commands.addCommand({
             name: 'send_query', readOnly: false,
             bindKey: {win: 'Ctrl-Enter',  mac: 'Command-Enter'},
             exec: function(editor) { that.query(); }
         });
-        userQuery.commands.addCommand({
+        queryInput.commands.addCommand({
             name: 'next_result', readOnly: false,
             bindKey: {win: 'Ctrl-;',  mac: 'Command-;'},
             exec: function(editor) { that.nextSolution(); }
         });
-        userQuery.commands.addCommand({
+        queryInput.commands.addCommand({
             name: 'next_history', readOnly: false,
             bindKey: {win: 'Up',  mac: 'Up'},
             exec: function(editor) { that.nextHistoryItem(); }
         });
-        userQuery.commands.addCommand({
+        queryInput.commands.addCommand({
             name: 'previous_history', readOnly: false,
             bindKey: {win: 'Down',  mac: 'Down'},
             exec: function(editor) { that.previousHistoryItem(); }
         });
-        userQuery.resize(true);
+        queryInput.setShowPrintMargin(false);
+        queryInput.renderer.setScrollMargin(6, 6, 6, 6);
+        queryInput.resize(true);
         
         this.initAutoCompletion();
         
@@ -156,23 +158,18 @@ module.exports = function(client, options) {
     
       if (query_string.substr(query_string.length - 1) == ".") {
         query_string = query_string.substr(0, query_string.length - 1);
-        prolog = that.newProlog();
-        that.on_query(prolog.qid,query_string);
-        
-        prolog.jsonQuery(query_string, function(result) {
-            that.on_query_answer(prolog.qid,result);
-        }, mode=1); // incremental mode
-        query.setValue("");
-        
-        that.addHistoryItem(query_string);
-        historyIndex = -1;
       }
-      else {
-        if (prolog != null && prolog.finished == false) {
-          that.finishProlog(prolog);
-          prolog = undefined;
-        }
-      }
+
+      prolog = that.newProlog();
+      that.on_query(prolog.qid,query_string);
+
+      prolog.jsonQuery(query_string, function(result) {
+          that.on_query_answer(prolog.qid,result);
+      }, mode=1); // incremental mode
+      query.setValue("");
+
+      that.addHistoryItem(query_string);
+      historyIndex = -1;
     };
 
     this.nextSolution = function () {
@@ -186,9 +183,9 @@ module.exports = function(client, options) {
 
     // set the value of the query editor and move the cursor to the end
     this.setQueryValue = function (val, focus){
-      var user_query = ace.edit(queryDiv);
-      user_query.setValue(val, -1);
-      if(focus) user_query.focus();
+      var queryInput = ace.edit(queryDiv);
+      queryInput.setValue(val, -1);
+      if(focus) queryInput.focus();
     };
 
     this.format = function (val) {
@@ -218,9 +215,9 @@ module.exports = function(client, options) {
         pl.jsonQuery("history_get("+index+",Q).",
             function(result) {
                 if(result.solution) {
-                    var user_query = ace.edit(queryDiv);
-                    user_query.setValue(result.solution.Q + ".");
-                    user_query.focus();
+                    var queryInput = ace.edit(queryDiv);
+                    queryInput.setValue(result.solution.Q + ".");
+                    queryInput.focus();
                     historyIndex = index;
                 }
             }
