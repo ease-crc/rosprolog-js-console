@@ -28,8 +28,6 @@ module.exports = function(client, options) {
     // The index to the currently active history item
     // history items are saved on the server and queried using AJAX
     var historyIndex = -1;
-    
-    this.rdf_namespaces = {};
 
     this.init = function () {
         var queryInput = ace.edit(queryDiv);
@@ -71,27 +69,6 @@ module.exports = function(client, options) {
         queryInput.resize(true);
         
         this.initAutoCompletion();
-        
-        setInterval(that.updateNamespaces, 10000);
-        that.updateNamespaces();
-    };
-    
-    this.updateNamespaces = function(objectName) {
-        if(!client.ros) return;
-        var pl = new ROSPrologClient(client.ros, {});
-        if(!pl) return;
-        pl.jsonQuery("findall([_X,_Y], rdf_current_ns(_X,_Y), NS).",
-            function(result) {
-                pl.finishClient();
-                if(result.solution) {
-                  var namespaces = {};
-                  for(i in result.solution.NS) {
-                    namespaces[result.solution.NS[i][1]] = result.solution.NS[i][0];
-                  }
-                  that.rdf_namespaces = namespaces;
-                }
-            }
-        );
     };
     
     this.queryPredicateNames = function() {
@@ -186,15 +163,6 @@ module.exports = function(client, options) {
       var queryInput = ace.edit(queryDiv);
       queryInput.setValue(val, -1);
       if(focus) queryInput.focus();
-    };
-
-    this.format = function (val) {
-        if (prolog != null) {
-            return prolog.format({"value": val}, that.rdf_namespaces);
-        }
-        else {
-            return val;
-        }
     };
     
     ///////////////////////////////
