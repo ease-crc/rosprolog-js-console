@@ -172,7 +172,7 @@ module.exports = function(client, options) {
     this.addHistoryItem = function (query) {
         var pl = new ROSPrologClient(client.ros, {});
         if(!pl) return;
-        pl.jsonQuery("history_add('"+query.replaceAll("'","\'")+"').",
+        pl.jsonQuery("history_add('"+query.replaceAll("'","\\'")+"').",
             function(result) {
                 //console.info(result);
             }
